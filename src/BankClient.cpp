@@ -1,53 +1,123 @@
 
+#include "BankServer.h"
 #include "BankClient.h"
 #include <iostream>
 
-void Client::MnuStart::logic() //landing page
+using namespace Client;
+
+Serv::Server server;
+
+//function implementations 
+
+/// <summary>
+/// boolean inputs
+/// </summary>
+/// <param name="def">boolean for default option, defaults to no(default=false)</param>
+/// <returns>Yes or no (true, false)</returns>
+bool Menu::YesNo(bool def) 
 {
-	std::cout << "menu here";
+	bool b = def;
+	return b;
 }
 
-void Client::MnuCustomerLogin::logic() //login for customers
+/// <summary>
+/// dynamic inputs; takes input & then iterates through a string to find return code. -1 for no valid input
+/// </summary>
+/// <param name="s">string of characters</param>
+/// <returns>integer of picked option, -1 if none</returns>
+int Menu::DynamicOptions(std::string s)
 {
-	std::cout << "menu here";
+	int r = -1;
+	return r;
 }
 
-void Client::MnuEmployeeLogin::logic() //login for employees
+/// <summary>
+/// string input, returns empty string if nothing is recieved
+/// </summary>
+/// <param name="len">input length</param>
+/// <returns>string from user</returns>
+std::string Menu::TextInput(int len)
 {
-	std::cout << "menu here";
+	std::string s = "";
+	return s;
 }
 
-void Client::MnuCustomerStart::logic() //customer overview
+/// <summary>
+/// landing page
+/// </summary>
+void MnuStart::logic()
 {
-	std::cout << "menu here";
+	
 }
 
-void Client::MnuEmployeeStart::logic() //employee overview
+/// <summary>
+/// login for customers
+/// </summary>
+void MnuCustomerLogin::logic()
 {
-	std::cout << "menu here";
+	
 }
 
-void Client::MnuEmployeeCreation::logic() //page to make a new employee login
+/// <summary>
+/// login for employees
+/// </summary>
+void MnuEmployeeLogin::logic()
 {
-	std::cout << "menu here";
+	
 }
 
-void Client::MnuCustomerCreation::logic() //page to make a new customer login
+/// <summary>
+/// customer overview
+/// </summary>
+void MnuCustomerStart::logic()
 {
-	std::cout << "menu here";
+	
 }
 
-void Client::MnuTransferBetweenAccounts::logic() //move money between accounts
+/// <summary>
+/// employee overview
+/// </summary>
+void MnuEmployeeStart::logic()
 {
-	std::cout << "menu here";
+	
 }
 
-void Client::MnuDeposit::logic() //employee despositing cash; no self service/ATM yet
+/// <summary>
+/// page to make a new employee login
+/// </summary>
+void MnuEmployeeCreation::logic()
 {
-	std::cout << "menu here";
+	
+}
+/// <summary>
+/// page to make a new customer login & their first account
+/// </summary>
+void MnuCustomerCreation::logic()
+{
+	
 }
 
-void Client::MnuGetAccountHistory::logic() //view the transaction history
+/// <summary>
+/// move money between accounts
+/// </summary>
+void MnuTransferBetweenAccounts::logic()
 {
-	std::cout << "menu here";
+	
+}
+
+/// <summary>
+/// employee despositing cash; no self service/ATM yet
+/// </summary>
+void MnuDeposit::logic()
+{
+	
+}
+
+/// <summary>
+/// view the transaction history
+/// </summary>
+void MnuGetAccountHistory::logic()
+{
+	std::cout << server.accountDisplay(user, account);
+	std::cout << server.accountTransactions(user, account);
 }

@@ -25,6 +25,7 @@
     <None Include="docs\Phase1.docx">
       <Filter>Document Files</Filter>
     </None>
+    <None Include="Docs\Phase2.docx" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\header\BankDB.h">
@@ -62,10 +63,5 @@
     <ClCompile Include="src\Main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="test\test.txt">
-      <Filter>Source Files\Test Files</Filter>
-    </Text>
   </ItemGroup>
 </Project>
