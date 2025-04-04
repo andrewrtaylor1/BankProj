@@ -56,6 +56,11 @@ class Node
 		
 		//finds a string, has to be exact. I'm not going to use C++23 just to get a Contains function I don't need, & it'd break other things
 		virtual int find(std::string s, std::shared_ptr<int> j) = 0;
+		//deletes the node, done by simply removing all references to it
+		virtual bool drop(std::shared_ptr<int> i, std::shared_ptr<int> j) = 0;
+		//updates the data at a specific index
+		virtual bool update(std::shared_ptr<int> i, std::shared_ptr<int> j, std::shared_ptr<T> d) = 0;
+		virtual int count(int i) = 0;
 };
 
 /// <summary>
@@ -75,7 +80,12 @@ class InternalNode : public Node<T>
 
 		~InternalNode() {}
 
-
+		/// <summary>
+		/// Check if a specific node exists. Only internal nodes count
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <returns>whether or not the node exists, bool</returns>
 		bool exists(std::shared_ptr<int> i, std::shared_ptr<int> j)
 		{
 			bool b = false;
@@ -96,24 +106,36 @@ class InternalNode : public Node<T>
 			return b;
 		}
 
+		/// <summary>
+		/// find a string in a node
+		/// </summary>
+		/// <param name="s">string to be found</param>
+		/// <param name="j">current index</param>
+		/// <returns>specific index of string, int</returns>
 		int find(std::string s, std::shared_ptr<int> j)
 		{
-			if (data->compare(s) == 0)
+			if (data->compare(s) == 0) //using compare function, must add compare function to search 
 			{
-				return (*j);
+				return *j; //dereference the pointer & return it
 			}
 			
 			if (Node<T>::getNext())
 			{
-				*j = *j + 1;
-				return Node<T>::getNext()->find(s, j);
+				*j = *j + 1; //add one to current index
+				return Node<T>::getNext()->find(s, j); //get the next node's find function
 			}
 			else
 			{
-				return -1;
+				return -1; //return negative one, error/doesn't exist
 			}
 		}
 
+		/// <summary>
+		/// grabs the data from the specific index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <returns>returns a pointer to the data</returns>
 		std::shared_ptr<T> get(std::shared_ptr<int> i, std::shared_ptr<int> j)
 		{
 			if (*i > *j)
@@ -133,6 +155,13 @@ class InternalNode : public Node<T>
 			return std::shared_ptr<T>();
 		}
 
+		/// <summary>
+		/// put data at a specific index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <param name="d">data to be placed</param>
+		/// <returns>was it successful? bool</returns>
 		bool put(std::shared_ptr<int> i, std::shared_ptr<int> j, std::shared_ptr<T> d)
 		{
 			bool b = false;
@@ -149,11 +178,88 @@ class InternalNode : public Node<T>
 			if (*i == *j)
 			{
 				std::shared_ptr<Node<T>> n(new InternalNode<T>(d));
-				Node<T>::getPrevious()->getNext() = n;
+				Node<T>::getPrevious()->setNext(n);
 				Node<T>::getPrevious() = n;
 			}
 
 			return b;
+		}
+
+		/// <summary>
+		/// finds the node to delete; if it's this one, use the dedicated private delete function
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <returns>was it successful? bool</returns>
+		bool drop(std::shared_ptr<int> i, std::shared_ptr<int> j)
+		{
+			bool b = false;
+			if (*i > *j)
+			{
+				*j = *j + 1;
+				b = Node<T>::getNext()->drop(i, j);
+			}
+			if (*i < *j)
+			{
+				*j = *j - 1;
+				b = Node<T>::getPrevious()->drop(i, j);
+			}
+			if (*i == *j)
+			{
+				b = drop();
+			}
+			return b;
+		}
+
+		/// <summary>
+		/// update data at a specific index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <param name="d">data to be placed</param>
+		/// <returns>was it successful? bool</returns>
+		bool update(std::shared_ptr<int> i, std::shared_ptr<int> j, std::shared_ptr<T> d)
+		{
+			bool b = false;
+			if (*i > *j)
+			{
+				*j = *j + 1;
+				b = Node<T>::getNext()->update(i, j, d);
+			}
+			if (*i < *j)
+			{
+				*j = *j - 1;
+				b = Node<T>::getPrevious()->update(i, j, d);
+			}
+			if (*i == *j)
+			{
+				b = true;
+				data = d;
+			}
+
+			return b;
+		}
+
+		/// <summary>
+		/// simple function to count each node
+		/// </summary>
+		/// <param name="i">int of count before</param>
+		/// <returns>current count, int</returns>
+		int count(int i)
+		{
+			return Node<T>::getNext()->count(i + 1);
+		}
+
+	private:
+		/// <summary>
+		/// Just simply deletes the current node
+		/// </summary>
+		/// <returns>was it successful? bool</returns>
+		bool drop()
+		{
+			Node<T>::getPrevious()->setNext(Node<T>::getNext());
+			Node<T>::getNext()->setPrevious(Node<T>::getPrevious());
+			return true;
 		}
 };
 
@@ -168,6 +274,12 @@ class ExternalNode : public Node<T>
 		
 		~ExternalNode() {}
 
+		/// <summary>
+		/// Check if a specific node exists. Only internal nodes count
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <returns>whether or not the node exists, bool</returns>
 		bool exists(std::shared_ptr<int> i, std::shared_ptr<int> j)
 		{
 			bool b = false;
@@ -184,11 +296,17 @@ class ExternalNode : public Node<T>
 			return b;
 		}
 
+		/// <summary>
+		/// find a string in a node
+		/// </summary>
+		/// <param name="s">string to be found</param>
+		/// <param name="j">current index</param>
+		/// <returns>specific index of string, int</returns>
 		int find(std::string s, std::shared_ptr<int> j)
 		{
 			if (Node<T>::getNext())
 			{
-				(*j) = (*j) + 1;
+				*j = *j + 1;
 				return Node<T>::getNext()-> find(s, j);
 			}
 			else
@@ -197,6 +315,12 @@ class ExternalNode : public Node<T>
 			}
 		}
 
+		/// <summary>
+		/// grabs the data from the specific index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <returns>returns a pointer to the data</returns>
 		std::shared_ptr<T> get(std::shared_ptr<int> i, std::shared_ptr<int> j)
 		{
 			if (*i > *j)
@@ -212,6 +336,13 @@ class ExternalNode : public Node<T>
 			return std::shared_ptr<T>();
 		}
 
+		/// <summary>
+		/// put data at a specific index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <param name="d">data to be placed</param>
+		/// <returns>was it successful? bool</returns>
 		bool put(std::shared_ptr<int> i, std::shared_ptr<int> j, std::shared_ptr<T> d)
 		{
 			bool b = false;
@@ -249,6 +380,70 @@ class ExternalNode : public Node<T>
 
 			return b;
 		}
+
+		/// <summary>
+		/// deletes data at node; checking is done outside of node. For an external node, this does nothing but traversal
+		/// </summary>
+		/// <returns>was it successful? bool </returns>
+		bool drop(std::shared_ptr<int> i, std::shared_ptr<int> j)
+		{
+			bool b = false;
+			if (*i > *j)
+			{
+				*j = *j + 1;
+				return Node<T>::getNext()->drop(i, j);
+			}
+			if (*i < *j)
+			{
+				*j = *j - 1;
+				return Node<T>::getPrevious()->drop(i, j);
+			}
+			return b;
+		}
+
+		/// <summary>
+		/// update data at a specific index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="j">current index</param>
+		/// <param name="d">data to be placed</param>
+		/// <returns>was it successful? bool</returns>
+		bool update(std::shared_ptr<int> i, std::shared_ptr<int> j, std::shared_ptr<T> d)
+		{
+			bool b = false;
+			if (*i > *j && Node<T>::getNext())
+			{
+				*j = *j + 1;
+				b = Node<T>::getNext()->update(i, j, d);
+			}
+			if (*i < *j && Node<T>::getPrevious())
+			{
+				*j = *j - 1;
+				b = Node<T>::getPrevious()->update(i, j, d);
+			}
+
+			return b;
+		}
+
+		/// <summary>
+		/// simple function to count each node
+		/// </summary>
+		/// <param name="i">int of count before</param>
+		/// <returns>current count, int</returns>
+		int count(int i)
+		{
+			//if we have a next node (head node)
+			if (Node<T>::getNext())
+			{
+				//start going through nodes
+				return Node<T>::getNext()->count(i);
+			}
+			else
+			{
+				//if we are at the tail node, just return
+				return i;
+			}
+		}
 };
 
 /// <summary>
@@ -277,6 +472,11 @@ class LinkedList
 			put(d);
 		}
 
+		/// <summary>
+		/// checks the existence of an internal node at specific index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <returns>does it exist, bool</returns>
 		bool exists(int i)
 		{
 			bool b = false;
@@ -295,6 +495,11 @@ class LinkedList
 			return b;
 		}
 		
+		/// <summary>
+		/// finds the index for a specific string
+		/// </summary>
+		/// <param name="s">string to find</param>
+		/// <returns>index, -1 if not in list, int</returns>
 		int find(std::string s)
 		{
 			std::shared_ptr<int> j(new int(0));
@@ -302,6 +507,11 @@ class LinkedList
 			return -1;
 		}
 
+		/// <summary>
+		/// gets pointer to data from specific index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <returns>pointer to data</returns>
 		std::shared_ptr<T> get(int i)
 		{
 			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
@@ -321,11 +531,22 @@ class LinkedList
 			return std::shared_ptr<T>();
 		}
 
+		/// <summary>
+		/// get function using the string
+		/// </summary>
+		/// <param name="s">string to find</param>
+		/// <returns>pointer to data, null if it can't be found</returns>
 		std::shared_ptr<T> get(std::string s)
 		{
 			return get(find(s));
 		}
 
+		/// <summary>
+		/// put at specific index
+		/// </summary>
+		/// <param name="d">pointer to data</param>
+		/// <param name="i">desired index</param>
+		/// <returns>was it successful, bool</returns>
 		bool put(std::shared_ptr<T> d, int i)
 		{
 			bool b = false;
@@ -346,6 +567,11 @@ class LinkedList
 			return b;
 		}
 
+		/// <summary>
+		/// put, unindexed
+		/// </summary>
+		/// <param name="d">data to put, pointer</param>
+		/// <returns>was successful, bool</returns>
 		bool put(std::shared_ptr<T> d)
 		{
 			bool b = false;
@@ -354,6 +580,90 @@ class LinkedList
 			return b;
 		}
 
+		/// <summary>
+		/// Drop (delete) an entry
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <returns>success, bool</returns>
+		bool drop(int i)
+		{
+			bool b = false;
+			//just using exist code again; traversing through the list already proves whether or not the index exists
+			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
+			std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
+			//switching logic; if the index is higher than half the count, we start from the back
+			if (i > (count / 2))
+			{
+				*j = count;
+				b = tail->drop(iPointer, j);
+			}
+			else
+			{
+				b = head->drop(iPointer, j);
+			}
+			return b;
+		}
+
+		/// <summary>
+		/// Drop (delete) an entry, based on string
+		/// </summary>
+		/// <param name="i">desired string</param>
+		/// <returns>success, bool</returns>
+		bool drop(std::string s)
+		{
+			int i = find(s);
+			return drop(i);
+		}
+
+		/// <summary>
+		/// update data at a given index
+		/// </summary>
+		/// <param name="i">desired index</param>
+		/// <param name="d">data to update</param>
+		/// <returns>successful? bool</returns>
+		bool update(int i, std::shared_ptr<T> d)
+		{
+			bool b = false;
+			//just using exist code again; traversing through the list already proves whether or not the index exists
+			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
+			std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
+			//switching logic; if the index is higher than half the count, we start from the back
+			if (i > (count / 2))
+			{
+				*j = count;
+				b = tail->update(iPointer, j, d);
+			}
+			else
+			{
+				b = head->update(iPointer, j, d);
+			}
+			return b;
+		}
+
+		/// <summary>
+		/// update data with a given string value
+		/// </summary>
+		/// <param name="s">desired string</param>
+		/// <param name="d">data to update</param>
+		/// <returns>successful? bool</returns>
+		bool update(std::string s, std::shared_ptr<T> d)
+		{
+			int i = find(s);
+			return update(i, d);
+		}
+
+		/// <summary>
+		/// does a quick count of InternalNodes
+		/// </summary>
+		void updateCount()
+		{
+			count = head->count(0);
+		}
+
+		/// <summary>
+		/// get the count
+		/// </summary>
+		/// <returns>count, int</returns>
 		int getCount()
 		{
 			return count;

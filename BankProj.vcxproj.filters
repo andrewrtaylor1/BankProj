@@ -25,7 +25,12 @@
     <None Include="docs\Phase1.docx">
       <Filter>Document Files</Filter>
     </None>
-    <None Include="Docs\Phase2.docx" />
+    <None Include="Docs\Phase2.docx">
+      <Filter>Document Files</Filter>
+    </None>
+    <None Include="Docs\Phase3.docx">
+      <Filter>Document Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\header\BankDB.h">
@@ -49,9 +54,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Encrypt.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\List.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\BankServer.cpp">

@@ -63,3 +63,70 @@ int Employee::deposit(std::shared_ptr<Database> d, std::string acc, double v)
 		return 0;
 	}
 }
+
+/// <summary>
+/// Handles overdraft for a specific user
+/// </summary>
+/// <param name="c">Customer shared pointer</param>
+/// <returns>was successful?, bool</returns>
+bool Overdraft::OnPurchase(std::shared_ptr<Customer> cust, std::shared_ptr<Database> d)
+{
+	bool success = false;
+	for (int i = 0; i < cust->AccountIDs.getCount(); i++)
+	{
+		//pointer to account, from account get -> dereferenced pointer to AccountID string
+		std::shared_ptr<Account> a;
+		if (cust->AccountIDs.get(i)) a = d->Accounts.get(*cust->AccountIDs.get(i));
+
+		//check if we actually got the account
+		if (a)
+		{
+			//we can assume string exists at this point
+			std::string aID = *cust->AccountIDs.get(i);
+			//if so, continue & see if account's balance is less than 0
+			if (a->balance < 0)
+			{
+				//check accounts again
+				for (int j = 0; j < cust->AccountIDs.getCount(); j++)
+				{
+					std::shared_ptr<Account> b;
+					if (cust->AccountIDs.get(j)) b = d->Accounts.get(*cust->AccountIDs.get(j));
+					//make sure b exists
+					if (b)
+					{
+						//we can assume string exists to get to this point
+						std::string bID = *cust->AccountIDs.get(j);
+
+						//extra if to skip trying to pull money from itself, Just In Case; preemptive bug fix
+						if (!(bID == aID))
+						{
+							//go until account balance is fixed
+							while (a->balance < 0 && b->available > 0)
+							{
+								//make amount to sub, starting at 5 bucks
+								double amtToSub = 5.00;
+								//scale amount to sub based on amount currently missing
+								if (a->balance < USDollar(20.00))
+								{
+									amtToSub = 50.00;
+								}
+								else if (a->balance < USDollar(10.00))
+								{
+									amtToSub = 20.00;
+								}
+								else if (a->balance < USDollar(5.00))
+								{
+									amtToSub = 10.00;
+								}
+
+								//send from account b to account A
+								success = cust->transfer(d, bID, aID, amtToSub)==0;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return success;
+}

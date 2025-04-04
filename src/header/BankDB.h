@@ -95,11 +95,18 @@ namespace DB
 				return USDollar(-value);
 			}
 
-			//allows addition; subtraction not needed, just use negative Currency instead
+			//allows addition
 			USDollar operator+(const USDollar& add) const
 			{
 				return USDollar(value + add.value);
 			}
+
+			//allows subtraction
+			USDollar operator-(const USDollar& sub) const
+			{
+				return USDollar(value - sub.value);
+			}
+
 			//comparison operators
 			
 			//equals operator overload
@@ -225,6 +232,7 @@ namespace DB
 	/// </summary>
 	class Account
 	{
+		friend class Interest; //forward declaration of friendship
 		public:
 			Account(Transaction* t, std::string id) {
 				Transactions = LinkedList<Transaction>(std::shared_ptr<Transaction>(t)); //construct Transaction list
@@ -590,46 +598,165 @@ namespace DB
 	};
 
 	/// <summary>
+	/// contains static functions for overdraft
+	/// </summary>
+	class Overdraft
+	{
+		public:
+			/// <summary>
+			/// Handles overdraft for a specific user
+			/// </summary>
+			/// <param name="c">Customer shared pointer</param>
+			/// <returns>was successful?, bool</returns>
+			static bool OnPurchase(std::shared_ptr<Customer> cust, std::shared_ptr<Database> d);
+	};
+
+	/// <summary>
+	/// contains static functions for interest
+	/// </summary>
+	class Interest
+	{
+		public:
+			
+			/// <summary>
+			/// payout function, used to simplify code 
+			/// </summary>
+			/// <param name="acc">account to do interest on</param>
+			static void payout(std::shared_ptr<Account> acc, double rate, double ratio)
+			{
+				USDollar pay(rate * ratio); //get pay from rate * ratio
+				if (pay < 1) return; //if pay is 0, just stop
+				std::shared_ptr<BankFunction> trans(new BankFunction(pay, "Interest payout")); //create new transaction
+				acc->processTransaction(trans); //send new transaction to account
+				acc->LastPayout = std::chrono::system_clock::now(); //reset last payout to now
+			}
+			
+			
+			/// <summary>
+			/// handles interest per account
+			/// </summary>
+			/// <param name="acc">account to have interest updated</param>
+			static void IndividualAccount(std::shared_ptr<Account> acc)
+			{
+				//if account exists & is not a null pointer
+				if (acc)
+				{
+					//get values for ease of use from here on
+					int t = acc->interestType;
+					int p = acc->payoutRate;
+
+					//get time values in hours
+					int interestTime = std::chrono::duration_cast<std::chrono::hours>(std::chrono::system_clock::now() - acc->LastInterest).count();
+					int payoutTime = std::chrono::duration_cast<std::chrono::hours>(std::chrono::system_clock::now() - acc->LastPayout).count();
+					//hours comparison value; payoutRate will change that
+					int payoutComparison = 8760;
+					if (p == 1) payoutComparison = 4320;
+					if (p == 2) payoutComparison = 720;
+					if (p == 3) payoutComparison = 24;
+
+					double rate = acc->APY;
+					double adjustedRate = rate;
+					double ratio = 1;
+
+					//what type of interest?
+					switch (t)
+					{
+						case 1 : case 2:
+							//compound interest, yearly
+							ratio = payoutComparison / 8760.00;
+							if (interestTime > 8760)
+							{
+								acc->interestSoFar = acc->interestSoFar + acc->balance.GetPercentage(adjustedRate);
+								acc->LastInterest = std::chrono::system_clock::now();
+							}
+							break;
+						case 3:
+							//compound interest, monthly
+							adjustedRate = rate / 12;
+							ratio = payoutComparison / 720.00;
+							if (interestTime > 720)
+							{
+								acc->interestSoFar = acc->interestSoFar + acc->balance.GetPercentage(adjustedRate);
+								acc->LastInterest = std::chrono::system_clock::now();
+							}
+							break;
+						case 4:
+							//compound interest, daily
+							adjustedRate = rate / 365;
+							ratio = payoutComparison / 24.00;
+							if (interestTime > 24)
+							{
+								acc->interestSoFar = acc->interestSoFar + acc->balance.GetPercentage(adjustedRate);
+								acc->LastInterest = std::chrono::system_clock::now();
+							}
+							break;
+						default:
+							//do nothing by default, or no interest
+							break;
+					}
+
+					//if payout is greater than comparison value & not a certificate of deposit, payout
+					if (payoutTime > payoutComparison && acc->getType() != "Certificate of Deposit")
+					{
+						//use payout static function
+						payout(acc, adjustedRate, ratio);
+					}
+				}
+			}
+
+			/// <summary>
+			/// Goes through & handles interest for all accounts
+			/// </summary>
+			/// <param name="accs">list of accounts to go through</param>
+			static void AllAccounts(LinkedList<Account> accs)
+			{
+				for (int i = 0; i < accs.getCount(); i++)
+				{
+					IndividualAccount(accs.get(i));
+				}
+			}
+	};
+
+	/// <summary>
 	/// Database class
 	/// </summary>
 	class Database
 	{
 	public:
 		Database() {
-			//placeholders
-			std::shared_ptr<Customer> c(new Customer("TestUser", "pass"));
-			std::shared_ptr<Customer> c2(new Customer("TestUser2", "pass2"));
+			//default employee
+			std::shared_ptr<Employee> e(new Employee("TotallyNotAnAdmin", "ao2j4ona5rorn2"));
 
-			std::shared_ptr<Employee> e(new Employee("TestEmployee", "pass"));
-			std::shared_ptr<Employee> e2(new Employee("TestEmployee", "pass2"));
-
-			std::shared_ptr<Account> sav(new Saving(new Deposit(USDollar(10000)), "s0001"));
-			std::shared_ptr<Account> chk(new Checking(new Deposit(USDollar(2000)), "c0001"));
-
-			std::shared_ptr<std::string> s(new std::string("s0001"));
-			std::shared_ptr<std::string> s2(new std::string("c0001"));
-
-			c->AccountIDs.put(s);
-			c2->AccountIDs.put(s2);
-
-			Customers = LinkedList<Customer>(c);
-			Employees = LinkedList<Employee>(e);
-			Accounts = LinkedList<Account>(sav);
+			Customers = LinkedList<Customer>();
+			Employees = LinkedList<Employee>(e); //put default employee into employees
+			Accounts = LinkedList<Account>();
 			EncryptionKeys = LinkedList<std::string>();
-
-			Accounts.put(chk);
-
-			Customers.put(c2);
-
-			Employees.put(e2);
-			//placeholder end
 		}
 		~Database() {}
-		LinkedList<Customer> Customers;
-		LinkedList<Employee> Employees;
-		LinkedList<Account> Accounts;
-		LinkedList<std::string> EncryptionKeys;
+		LinkedList<Customer> Customers; //customers, main users
+		LinkedList<Employee> Employees; //administrators, essentially
+		LinkedList<Account> Accounts; //all accounts, split from customers
+		LinkedList<std::string> EncryptionKeys; //encryption keys (not yet used)
 
+		/// <summary>
+		/// purchase request
+		/// </summary>
+		/// <param name="acc">account identifier string</param>
+		/// <param name="user">user identifer string</param>
+		/// <returns>was successful, bool</returns>
+		bool purchase(std::string acc, std::string user, std::string name = "Purchase", std::string origin = "Unknown")
+		{
+			std::shared_ptr<Customer> cust = Customers.get(user);
+			Overdraft::OnPurchase(cust, std::shared_ptr<Database>(this));
+		}
+
+		/// <summary>
+		/// bank processes done at a regular interval
+		/// </summary>
+		void bankProcesses()
+		{
+			Interest::AllAccounts(Accounts);
+		}
 	};
 
 }

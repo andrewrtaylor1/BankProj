@@ -134,6 +134,7 @@
   <ItemGroup>
     <None Include="docs\Phase1.docx" />
     <None Include="Docs\Phase2.docx" />
+    <None Include="Docs\Phase3.docx" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
@@ -147,7 +148,6 @@
     <ClCompile Include="src\BankClient.cpp" />
     <ClCompile Include="src\BankDB.cpp" />
     <ClCompile Include="src\Encrypt.cpp" />
-    <ClCompile Include="src\List.cpp" />
     <ClCompile Include="src\BankServer.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
