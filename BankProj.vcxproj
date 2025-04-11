@@ -135,6 +135,7 @@
     <None Include="docs\Phase1.docx" />
     <None Include="Docs\Phase2.docx" />
     <None Include="Docs\Phase3.docx" />
+    <None Include="Docs\Phase4.docx" />
     <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
@@ -142,6 +143,7 @@
     <ClInclude Include="src\header\BankDB.h" />
     <ClInclude Include="src\header\BankServer.h" />
     <ClInclude Include="src\header\Encrypt.h" />
+    <ClInclude Include="Src\header\Exception.h" />
     <ClInclude Include="src\header\List.h" />
   </ItemGroup>
   <ItemGroup>

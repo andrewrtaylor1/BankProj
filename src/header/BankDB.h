@@ -234,8 +234,8 @@ namespace DB
 	{
 		friend class Interest; //forward declaration of friendship
 		public:
-			Account(Transaction* t, std::string id) {
-				Transactions = LinkedList<Transaction>(std::shared_ptr<Transaction>(t)); //construct Transaction list
+			Account(std::shared_ptr<Transaction> t, std::string id) {
+				Transactions = LinkedList<Transaction>(t); //construct Transaction list
 				updateBalance(); //get the first balance
 				ID = id; //gets the name; we always want a unique name, 0000 would be an error/placeholder
 			}
@@ -260,16 +260,21 @@ namespace DB
 				USDollar b(0); //balance
 				USDollar a(0); //available
 				//for each member of the transactions list
-				for (int i = 1; i <= Transactions.getCount(); i++)
+				for (int i = 0; i < Transactions.getCount(); i++)
 				{
 					//get the transaction as a pointer
-					Transaction* t = Transactions.get(i).get();
-					//check if transaction isn't pending, add to available
-					if (!(t->Pending)) a = a + t->Val;
-					b = b + t->Val; //add to balance
-					//fill the values
-					balance = b;
-					available = a;
+					std::shared_ptr<Transaction> t = Transactions.get(i);
+
+					//make sure i actually grabbed a value & not a null ptr
+					if (t)
+					{
+						//check if transaction isn't pending, add to available
+						if (!(t->Pending)) a = a + t->Val;
+						b = b + t->Val; //add to balance
+						//fill the values
+						balance = b;
+						available = a;
+					}
 				}
 			}
 
@@ -291,12 +296,15 @@ namespace DB
 			std::string transactionHistory()
 			{
 				std::string s = "Transaction History:\n";
-				for (int i = Transactions.getCount(); i > 0; i--)
+				for (int i = Transactions.getCount()-1; i >= 0; i--)
 				{
 					//grabs transaction as pointer (shared ptr lets me make & destroy as many as I want)
 					std::shared_ptr<Transaction> t = Transactions.get(i);
-					s.append(t->TransactionType() + ": " + t->Name + " - " + t->Origin + "\n"); //type, name, and origin
-					s.append(t->Val.formattedValue()+"\n\n"); //value display (money gained/lost)
+					if (t) //check if it exists
+					{
+						s.append(t->TransactionType() + ": " + t->Name + " - " + t->Origin + "\n"); //type, name, and origin
+						s.append(t->Val.formattedValue() + "\n\n"); //value display (money gained/lost)
+					}
 				}
 				return s;
 			}
@@ -346,7 +354,7 @@ namespace DB
 	class Saving : public Account
 	{
 		public:
-			Saving(Transaction* t, std::string id) : Account(t, id) {}
+			Saving(std::shared_ptr<Transaction> t, std::string id) : Account(t, id) {}
 			~Saving() {}
 			void specialFunctions() //handles special functions ()
 			{
@@ -354,8 +362,8 @@ namespace DB
 			bool deposit(double d) //deposits money
 			{
 				//pretty verbose line here, let's work backwards
-				//I make a new dollar amount with the double, pass that to the new Transaction, which gets put into a smart pointer, which is then processed (success is 0)
-				return processTransaction(std::shared_ptr<Transaction>(new Deposit(USDollar(d))))==0;
+				//I make a new dollar amount with the double, pass that to the new Transaction, which gets put into a smart pointer, which is then processed (success is 1)
+				return processTransaction(std::shared_ptr<Transaction>(new Deposit(USDollar(d))))==1;
 			}
 			USDollar sendTransfer(double d) //transfers money
 			{
@@ -366,23 +374,23 @@ namespace DB
 			}
 			bool receiveTransfer(USDollar d, std::string id) //recieves transfered money
 			{
-				//transfer recieve, success is 0
-				return processTransaction(std::shared_ptr<Transaction>(new Transfer(USDollar(d), id)))==0;
+				//transfer recieve, success is 1
+				return processTransaction(std::shared_ptr<Transaction>(new Transfer(USDollar(d), id)))==1;
 			}
 
 			bool purchase(double d, std::string name, std::string origin) //handles purchase
 			{
-				//purchase success is 0
-				return processTransaction(std::shared_ptr<Transaction>(new Purchase(USDollar(d), name, origin)))==0;
+				//purchase success is 1
+				return processTransaction(std::shared_ptr<Transaction>(new Purchase(USDollar(d), name, origin)))==1;
 			}
 
 			int processTransaction(std::shared_ptr<Transaction> t) //underlying method for processing transactions (int return code for what happened to the transaction)
 			{
 				//very simple for right now
-				int i = 1; //failure code is 1
-				if(Transactions.put(t))
+				int i = 0; //failure code is 0
+				if (Transactions.put(t))
 				{
-					i = 0; //success code is 0
+					i = 1; //success code is 1
 					updateBalance(); //update the balance/available
 				}
 
@@ -401,7 +409,7 @@ namespace DB
 	class Checking : public Account
 	{
 		public:
-			Checking(Transaction* t, std::string id) : Account(t, id) {}
+			Checking(std::shared_ptr<Transaction> t, std::string id) : Account(t, id) {}
 			~Checking() {}
 			void specialFunctions() //handles special functions ()
 			{
@@ -409,8 +417,8 @@ namespace DB
 			bool deposit(double d) //deposits money
 			{
 				//pretty verbose line here, let's work backwards
-				//I make a new dollar amount with the double, pass that to the new Transaction, which gets put into a smart pointer, which is then processed (success is 0)
-				return processTransaction(std::shared_ptr<Transaction>(new Deposit(USDollar(d)))) == 0;
+				//I make a new dollar amount with the double, pass that to the new Transaction, which gets put into a smart pointer, which is then processed (success is 1)
+				return processTransaction(std::shared_ptr<Transaction>(new Deposit(USDollar(d)))) == 1;
 			}
 			USDollar sendTransfer(double d) //transfers money
 			{
@@ -421,23 +429,23 @@ namespace DB
 			}
 			bool receiveTransfer(USDollar d, std::string id) //recieves transfered money
 			{
-				//transfer recieve, success is 0
-				return processTransaction(std::shared_ptr<Transaction>(new Transfer(USDollar(d), id))) == 0;
+				//transfer recieve, success is 1
+				return processTransaction(std::shared_ptr<Transaction>(new Transfer(USDollar(d), id))) == 1;
 			}
 
 			bool purchase(double d, std::string name, std::string origin) //handles purchase
 			{
-				//purchase success is 0
-				return processTransaction(std::shared_ptr<Transaction>(new Purchase(USDollar(d), name, origin))) == 0;
+				//purchase success is 1
+				return processTransaction(std::shared_ptr<Transaction>(new Purchase(USDollar(d), name, origin))) == 1;
 			}
 
 			int processTransaction(std::shared_ptr<Transaction> t) //underlying method for processing transactions (int return code for what happened to the transaction)
 			{
 				//very simple for right now
-				int i = 1; //failure code is 1
+				int i = 0; //failure code is 0
 				if (Transactions.put(t))
 				{
-					i = 0; //success code is 0
+					i = 1; //success code is 1
 					updateBalance(); //update the balance/available
 				}
 
@@ -457,7 +465,7 @@ namespace DB
 	class CertOfDep : public Account
 	{
 	public:
-		CertOfDep(Transaction* t, std::string id) : Account(t, id) {}
+		CertOfDep(std::shared_ptr<Transaction> t, std::string id) : Account(t, id) {}
 		~CertOfDep() {}
 
 		std::chrono::system_clock::time_point EndOfTerm;
@@ -468,8 +476,8 @@ namespace DB
 		bool deposit(double d) //deposits money
 		{
 			//pretty verbose line here, let's work backwards
-			//I make a new dollar amount with the double, pass that to the new Transaction, which gets put into a smart pointer, which is then processed (success is 0)
-			return processTransaction(std::shared_ptr<Transaction>(new Deposit(USDollar(d)))) == 0;
+			//I make a new dollar amount with the double, pass that to the new Transaction, which gets put into a smart pointer, which is then processed (success is 1)
+			return processTransaction(std::shared_ptr<Transaction>(new Deposit(USDollar(d)))) == 1;
 		}
 		USDollar sendTransfer(double d) //transfers money
 		{
@@ -480,23 +488,23 @@ namespace DB
 		}
 		bool receiveTransfer(USDollar d, std::string id) //recieves transfered money
 		{
-			//transfer recieve, success is 0
-			return processTransaction(std::shared_ptr<Transaction>(new Transfer(USDollar(d), id))) == 0;
+			//transfer recieve, success is 1
+			return processTransaction(std::shared_ptr<Transaction>(new Transfer(USDollar(d), id))) == 1;
 		}
 
 		bool purchase(double d, std::string name, std::string origin) //handles purchase
 		{
-			//purchase success is 0
-			return processTransaction(std::shared_ptr<Transaction>(new Purchase(USDollar(d), name, origin))) == 0;
+			//purchase success is 1
+			return processTransaction(std::shared_ptr<Transaction>(new Purchase(USDollar(d), name, origin))) == 1;
 		}
 
 		int processTransaction(std::shared_ptr<Transaction> t) //underlying method for processing transactions (int return code for what happened to the transaction)
 		{
 			//very simple for right now
-			int i = 1; //failure code is 1
+			int i = 0; //failure code is 0
 			if (Transactions.put(t))
 			{
-				i = 0; //success code is 0
+				i = 1; //success code is 1
 				updateBalance(); //update the balance/available
 			}
 
@@ -515,7 +523,7 @@ namespace DB
 	class MoneyMarket : public Account
 	{
 	public:
-		MoneyMarket(Transaction* t, std::string id) : Account(t, id) {}
+		MoneyMarket(std::shared_ptr<Transaction> t, std::string id) : Account(t, id) {}
 		~MoneyMarket() {}
 		void specialFunctions() //handles special functions (has needs of both checkings & savings, and its own needs)
 		{
@@ -523,8 +531,8 @@ namespace DB
 		bool deposit(double d) //deposits money
 		{
 			//pretty verbose line here, let's work backwards
-			//I make a new dollar amount with the double, pass that to the new Transaction, which gets put into a smart pointer, which is then processed (success is 0)
-			return processTransaction(std::shared_ptr<Transaction>(new Deposit(USDollar(d)))) == 0;
+			//I make a new dollar amount with the double, pass that to the new Transaction, which gets put into a smart pointer, which is then processed (success is 1)
+			return processTransaction(std::shared_ptr<Transaction>(new Deposit(USDollar(d)))) == 1;
 		}
 		USDollar sendTransfer(double d) //transfers money
 		{
@@ -535,23 +543,23 @@ namespace DB
 		}
 		bool receiveTransfer(USDollar d, std::string id) //recieves transfered money
 		{
-			//transfer recieve, success is 0
-			return processTransaction(std::shared_ptr<Transaction>(new Transfer(USDollar(d), id))) == 0;
+			//transfer recieve, success is 1
+			return processTransaction(std::shared_ptr<Transaction>(new Transfer(USDollar(d), id))) == 1;
 		}
 
 		bool purchase(double d, std::string name, std::string origin) //handles purchase
 		{
-			//purchase success is 0
-			return processTransaction(std::shared_ptr<Transaction>(new Purchase(USDollar(d), name, origin))) == 0;
+			//purchase success is 1
+			return processTransaction(std::shared_ptr<Transaction>(new Purchase(USDollar(d), name, origin))) == 1;
 		}
 
 		int processTransaction(std::shared_ptr<Transaction> t) //underlying method for processing transactions (int return code for what happened to the transaction)
 		{
 			//very simple for right now
-			int i = 1; //failure code is 1
+			int i = 0; //failure code is 0
 			if (Transactions.put(t))
 			{
-				i = 0; //success code is 0
+				i = 1; //success code is 1
 				updateBalance(); //update the balance/available
 			}
 

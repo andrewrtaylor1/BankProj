@@ -17,7 +17,7 @@ namespace Client
 			//function declarations (generic input functions)
 			bool YesNo(bool def = false);
 			int DynamicOptions(std::string s);
-			std::string TextInput(int len);
+			std::string TextInput(std::string s = "Input here: ");
 
 	};
 
@@ -25,7 +25,7 @@ namespace Client
 	class MnuStart : public Menu
 	{
 		public:
-			MnuStart() {}
+			MnuStart() { logic(); }
 			~MnuStart() {
 			
 			}
@@ -35,7 +35,7 @@ namespace Client
 	class MnuCustomerLogin : public Menu
 	{
 		public:
-			MnuCustomerLogin() {}
+			MnuCustomerLogin() { logic(); }
 			~MnuCustomerLogin() {
 	
 			}
@@ -44,7 +44,7 @@ namespace Client
 	class MnuEmployeeLogin : public Menu
 	{
 		public:
-			MnuEmployeeLogin() {}
+			MnuEmployeeLogin() { logic(); }
 			~MnuEmployeeLogin() {
 	
 			}
@@ -54,59 +54,111 @@ namespace Client
 	class MnuCustomerStart : public Menu
 	{
 		public:
-			MnuCustomerStart() {}
+			MnuCustomerStart(std::string us, std::string pss)
+			{
+				user = us;
+				pass = pss;
+				logic();
+			}
 			~MnuCustomerStart() {
 	
 			}
 			void logic();
 			std::string user;
+			std::string pass;
 	};
 	class MnuEmployeeStart : public Menu
 	{
 		public:
-			MnuEmployeeStart() {}
+			MnuEmployeeStart(std::string us, std::string pss)
+			{
+				user = us;
+				pass = pss;
+				logic();
+			}
 			~MnuEmployeeStart() {
 	
 			}
 			void logic();
 			std::string user;
+			std::string pass;
 	};
 	class MnuEmployeeCreation : public Menu
 	{
 		public:
-			MnuEmployeeCreation() {}
+			MnuEmployeeCreation(std::string us, std::string pss)
+			{
+				user = us;
+				pass = pss;
+				logic();
+			}
 			~MnuEmployeeCreation() {
 	
 			}
 			void logic();
+			std::string user;
+			std::string pass;
 	};
 	class MnuCustomerCreation : public Menu
 	{
 		public:
-			MnuCustomerCreation() {}
+			MnuCustomerCreation(std::string us, std::string pss)
+			{
+				user = us;
+				pass = pss;
+				logic();
+			}
 			~MnuCustomerCreation() {
 	
 			}
 			void logic();
+			std::string user;
+			std::string pass;
 	};
+
+	class MnuAccountCreation : public Menu
+	{
+	public:
+		MnuAccountCreation(std::string us, std::string pss)
+		{
+			user = us;
+			pass = pss;
+			logic();
+		}
+		~MnuAccountCreation() {
+
+		}
+		void logic();
+		std::string user;
+		std::string pass;
+	};
+
 	class MnuTransferBetweenAccounts : public Menu
 	{
 		public:
-			MnuTransferBetweenAccounts() {} 
-			~MnuTransferBetweenAccounts() {
+			MnuTransferBetweenAccounts(std::string us, std::string pss)
+			{
+				user = us;
+				pass = pss;
+				logic();
+			}
+			~MnuTransferBetweenAccounts()
+			{
 	
 			}
 			void logic();
 			//strings for logic
 			std::string user;
-			std::string account1;
-			std::string account2;
+			std::string pass;
 	};
 	class MnuDeposit : public Menu
 	{
 		public:
-			MnuDeposit() {
-			
+			MnuDeposit(std::string us, std::string pss)
+			{
+				user = us;
+				pass = pss;
+				logic();
 			}
 			~MnuDeposit() {
 	
@@ -114,15 +166,36 @@ namespace Client
 			void logic();
 			//strings for logic
 			std::string user;
-			std::string account;
+			std::string pass;
 	};
+
+	class MnuGetAccounts : public Menu
+	{
+	public:
+		MnuGetAccounts(std::string us, std::string pss)
+		{
+			user = us;
+			pass = pss;
+			logic();
+		}
+		~MnuGetAccounts() {
+
+		}
+		void logic();
+		//strings for logic
+		std::string user;
+		std::string pass;
+	};
+
 	class MnuGetAccountHistory : public Menu
 	{
 		public:
-			MnuGetAccountHistory(std::string us, std::string acc)
+			MnuGetAccountHistory(std::string us, std::string pss, std::string acc)
 			{
 				user = us;
+				pass = pss;
 				account = acc;
+				logic();
 			}
 			~MnuGetAccountHistory() {
 	
@@ -130,6 +203,7 @@ namespace Client
 			void logic();
 			//strings for logic
 			std::string user;
+			std::string pass;
 			std::string account;
 	};
 }

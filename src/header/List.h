@@ -1,7 +1,26 @@
 #pragma once
 
+#include "Exception.h"
 #include <string>
 #include <memory>
+
+class ExLLOoB : public Exception
+{
+	public:
+		/// <summary>
+		/// Constructor
+		/// </summary>
+		/// <param name="s">throwing function</param>
+		ExLLOoB(std::string s) : Exception(s) {}
+
+		/// <summary>
+		/// print the error to cout
+		/// </summary>
+		void printError()
+		{
+			std::cout << "Attempted to access out of bounds index in LinkedList, while executing function: " << throwingFunc << "\n";
+		}
+};
 
 /// <summary>
 /// Abstract Node class for Linked List.
@@ -206,7 +225,8 @@ class InternalNode : public Node<T>
 			}
 			if (*i == *j)
 			{
-				b = drop();
+				b = true;
+				drop();
 			}
 			return b;
 		}
@@ -255,11 +275,10 @@ class InternalNode : public Node<T>
 		/// Just simply deletes the current node
 		/// </summary>
 		/// <returns>was it successful? bool</returns>
-		bool drop()
+		void drop()
 		{
 			Node<T>::getPrevious()->setNext(Node<T>::getNext());
 			Node<T>::getNext()->setPrevious(Node<T>::getPrevious());
-			return true;
 		}
 };
 
@@ -283,15 +302,24 @@ class ExternalNode : public Node<T>
 		bool exists(std::shared_ptr<int> i, std::shared_ptr<int> j)
 		{
 			bool b = false;
-			if (*i > *j)
+			if (*i > *j && Node<T>::getNext())
 			{
-				*j = *j + 1;
 				return Node<T>::getNext()->exists(i, j);
 			}
-			if (*i < *j)
+			if (*i < *j && Node<T>::getPrevious())
 			{
-				*j = *j - 1;
 				return Node<T>::getPrevious()->exists(i, j);
+			}
+			if (*i == *j)
+			{
+				if (!Node<T>::getNext())
+				{
+					return Node<T>::getPrevious()->exists(i, j);
+				}
+				if (!Node<T>::getPrevious())
+				{
+					return Node<T>::getNext()->exists(i, j);
+				}
 			}
 			return b;
 		}
@@ -304,9 +332,14 @@ class ExternalNode : public Node<T>
 		/// <returns>specific index of string, int</returns>
 		int find(std::string s, std::shared_ptr<int> j)
 		{
+			//out of bounds detection
+			if (*j < 0)
+			{
+				throw ExLLOoB("ExternalNode::find");
+				return -1;
+			}
 			if (Node<T>::getNext())
 			{
-				*j = *j + 1;
 				return Node<T>::getNext()-> find(s, j);
 			}
 			else
@@ -323,15 +356,29 @@ class ExternalNode : public Node<T>
 		/// <returns>returns a pointer to the data</returns>
 		std::shared_ptr<T> get(std::shared_ptr<int> i, std::shared_ptr<int> j)
 		{
-			if (*i > *j)
+			//out of bounds detection
+			if (*i < 0)
 			{
-				*j = *j + 1;
+				throw ExLLOoB("ExternalNode::get");
+			}
+			if (*i > *j && Node<T>::getNext())
+			{
 				return Node<T>::getNext()->get(i, j);
 			}
-			if (*i < *j)
+			if (*i < *j && Node<T>::getPrevious())
 			{
-				*j= *j -1;
 				return Node<T>::getPrevious()->get(i, j);
+			}
+			if (*i == *j)
+			{
+				if (!Node<T>::getNext())
+				{
+					return Node<T>::getPrevious()->get(i, j);
+				}
+				if (!Node<T>::getPrevious())
+				{
+					return Node<T>::getNext()->get(i, j);
+				}
 			}
 			return std::shared_ptr<T>();
 		}
@@ -346,10 +393,14 @@ class ExternalNode : public Node<T>
 		bool put(std::shared_ptr<int> i, std::shared_ptr<int> j, std::shared_ptr<T> d)
 		{
 			bool b = false;
-
+			//out of bounds detection
+			if (*i < 0)
+			{
+				throw ExLLOoB("ExternalNode::put");
+				return b;
+			}
 			if (*i > *j)
 			{
-				*j = *j + 1;
 				if (!Node<T>::getNext())
 				{
 					b = true;
@@ -364,7 +415,6 @@ class ExternalNode : public Node<T>
 			}
 			if (*i < *j)
 			{
-				*j = *j - 1;
 				if (!Node<T>::getPrevious())
 				{
 					b = true;
@@ -375,6 +425,23 @@ class ExternalNode : public Node<T>
 				else
 				{
 					b = Node<T>::getPrevious()->put(i, j, d);
+				}
+			}
+			if (*i == *j)
+			{
+				if (!Node<T>::getNext())
+				{
+					b = true;
+					std::shared_ptr<Node<T>> n(new InternalNode<T>(d, Node<T>::getPrevious()->getNext(), Node<T>::getPrevious()));
+					Node<T>::getPrevious()->setNext(n);
+					Node<T>::setPrevious(n);
+				}
+				if (!Node<T>::getPrevious())
+				{
+					b = true;
+					std::shared_ptr<Node<T>> n(new InternalNode<T>(d, Node<T>::getNext(), Node<T>::getNext()->getPrevious()));
+					Node<T>::getNext()->setPrevious(n);
+					Node<T>::setNext(n);
 				}
 			}
 
@@ -388,15 +455,30 @@ class ExternalNode : public Node<T>
 		bool drop(std::shared_ptr<int> i, std::shared_ptr<int> j)
 		{
 			bool b = false;
-			if (*i > *j)
+			//out of bounds detection
+			if (*i < 0)
 			{
-				*j = *j + 1;
+				throw ExLLOoB("ExternalNode::drop");
+				return b;
+			}
+			if (*i > *j && Node<T>::getNext())
+			{
 				return Node<T>::getNext()->drop(i, j);
 			}
-			if (*i < *j)
+			if (*i < *j && Node<T>::getPrevious())
 			{
-				*j = *j - 1;
 				return Node<T>::getPrevious()->drop(i, j);
+			}
+			if (*i == *j)
+			{
+				if (!Node<T>::getNext())
+				{
+					return Node<T>::getPrevious()->drop(i, j);
+				}
+				if (!Node<T>::getPrevious())
+				{
+					return Node<T>::getNext()->drop(i, j);
+				}
 			}
 			return b;
 		}
@@ -411,15 +493,30 @@ class ExternalNode : public Node<T>
 		bool update(std::shared_ptr<int> i, std::shared_ptr<int> j, std::shared_ptr<T> d)
 		{
 			bool b = false;
+			//out of bounds detection
+			if (*i < 0)
+			{
+				throw ExLLOoB("ExternalNode::update");
+				return b;
+			}
 			if (*i > *j && Node<T>::getNext())
 			{
-				*j = *j + 1;
 				b = Node<T>::getNext()->update(i, j, d);
 			}
 			if (*i < *j && Node<T>::getPrevious())
 			{
-				*j = *j - 1;
 				b = Node<T>::getPrevious()->update(i, j, d);
+			}
+			if (*i == *j)
+			{
+				if (!Node<T>::getPrevious())
+				{
+					return Node<T>::getNext()->update(i, j, d);
+				}
+				if (!Node<T>::getPrevious())
+				{
+					return Node<T>::getNext()->update(i, j, d);
+				}
 			}
 
 			return b;
@@ -480,10 +577,12 @@ class LinkedList
 		bool exists(int i)
 		{
 			bool b = false;
+			//we don't need to check for out of bounds because you Should be able to send any number to exists
+			//make pointers to values
 			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
 			std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
 			//switching logic; if the index is higher than half the count, we start from the back
-			if (i > (count / 2))
+			if (i > (count / 2) && i != *j)
 			{
 				*j = count;
 				b = tail->exists(iPointer, j);
@@ -492,6 +591,7 @@ class LinkedList
 			{
 				b = head->exists(iPointer, j);
 			}
+			//return no matter what; false if nothing happened
 			return b;
 		}
 		
@@ -514,20 +614,34 @@ class LinkedList
 		/// <returns>pointer to data</returns>
 		std::shared_ptr<T> get(int i)
 		{
-			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
-			std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
-			//switching logic; if the index is higher than half the count, we start from the back
-			if (i > (count / 2))
+			//try/catch for exceptions
+			try
 			{
-				*j = count+1;
-				return tail->get(iPointer, j);
+				//out of bounds detection
+				if (i < 0 || i >= count)
+				{
+					throw ExLLOoB("LinkedList::get");
+				}
+				std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
+				std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
+				//switching logic; if the index is higher than half the count, we start from the back
+				if (i > (count / 2) && i != *j)
+				{
+					*j = count;
+					return tail->get(iPointer, j);
+				}
+				else
+				{
+					return head->get(iPointer, j);
+				}
 			}
-			else
+			catch (Exception& ex)
 			{
-				return head->get(iPointer, j);
+				//print error, access by reference means it'll get the right printError
+				ex.printError();
 			}
 
-
+			//return null if we didn't get anything
 			return std::shared_ptr<T>();
 		}
 
@@ -550,20 +664,34 @@ class LinkedList
 		bool put(std::shared_ptr<T> d, int i)
 		{
 			bool b = false;
-
-			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
-			std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
-			//switching logic; if the index is higher than half the count, we start from the back
-			if (i > (count / 2))
+			try
 			{
-				*j = count;
-				b = tail->put(iPointer, j, d);
+				//out of bounds detection; no upper bound for use at the end
+				if (i < 0)
+				{
+					throw ExLLOoB("LinkedList::put");
+					return b;
+				}
+				std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
+				std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
+				//switching logic; if the index is higher than half the count, we start from the back
+				if (i > (count / 2) && i != *j)
+				{
+					*j = count;
+					b = tail->put(iPointer, j, d);
+				}
+				else
+				{
+					b = head->put(iPointer, j, d);
+				}
+				if (b) count++;
 			}
-			else
+			catch (Exception& ex)
 			{
-				b = head->put(iPointer, j, d);
+				//print error, access by reference means it'll get the right printError
+				ex.printError();
 			}
-			if (b) count++;
+			//return no matter what; false if nothing happened
 			return b;
 		}
 
@@ -574,10 +702,9 @@ class LinkedList
 		/// <returns>was successful, bool</returns>
 		bool put(std::shared_ptr<T> d)
 		{
-			bool b = false;
-			int i = count+1;
-			b = put(d, i);
-			return b;
+			int i = count; //get count
+			return put(d, i); //feed it to numbered put function
+			
 		}
 
 		/// <summary>
@@ -588,19 +715,37 @@ class LinkedList
 		bool drop(int i)
 		{
 			bool b = false;
-			//just using exist code again; traversing through the list already proves whether or not the index exists
-			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
-			std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
-			//switching logic; if the index is higher than half the count, we start from the back
-			if (i > (count / 2))
+			//try/catch for exceptions
+			try
 			{
-				*j = count;
-				b = tail->drop(iPointer, j);
+				//out of bounds detection
+				if (i < 0 || i > count)
+				{
+					throw ExLLOoB("LinkedList::drop");
+					return b;
+				}
+				//just using exist code again; traversing through the list already proves whether or not the index exists
+				std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
+				std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
+				//switching logic; if the index is higher than half the count, we start from the back
+				if (i > (count / 2) && i != *j)
+				{
+					*j = count;
+					b = tail->drop(iPointer, j);
+				}
+				else
+				{
+					b = head->drop(iPointer, j);
+				}
+				//update the count
+				updateCount();
 			}
-			else
+			catch (Exception& ex)
 			{
-				b = head->drop(iPointer, j);
+				//print error, access by reference means it'll get the right printError
+				ex.printError();
 			}
+			//return no matter what; false if nothing happened
 			return b;
 		}
 
@@ -624,19 +769,36 @@ class LinkedList
 		bool update(int i, std::shared_ptr<T> d)
 		{
 			bool b = false;
-			//just using exist code again; traversing through the list already proves whether or not the index exists
-			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
-			std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
-			//switching logic; if the index is higher than half the count, we start from the back
-			if (i > (count / 2))
+			//try/catch for exceptions
+			try
 			{
-				*j = count;
-				b = tail->update(iPointer, j, d);
+				//out of bounds detection
+				if (i < 0 || i > count)
+				{
+					throw ExLLOoB("LinkedList::update");
+					return b;
+				}
+				//just using exist code again; traversing through the list already proves whether or not the index exists
+				std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
+				std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
+				//switching logic; if the index is higher than half the count, we start from the back
+				if (i > (count / 2) && i != *j)
+				{
+					*j = count;
+					b = tail->update(iPointer, j, d);
+				}
+				else
+				{
+					b = head->update(iPointer, j, d);
+				}
 			}
-			else
+			catch (Exception& ex)
 			{
-				b = head->update(iPointer, j, d);
+				//print error, access by reference means it'll get the right printError
+				ex.printError();
 			}
+			
+			//return no matter what; false if nothing happened
 			return b;
 		}
 

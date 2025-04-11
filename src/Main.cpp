@@ -6,6 +6,6 @@
 
 int main()
 {
-
-	return 0;
+	Client::MnuStart(); //start
+	return 0; //end the program
 }

@@ -31,6 +31,9 @@
     <None Include="Docs\Phase3.docx">
       <Filter>Document Files</Filter>
     </None>
+    <None Include="Docs\Phase4.docx">
+      <Filter>Document Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\header\BankDB.h">
@@ -46,6 +49,9 @@
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\header\BankClient.h">
+      <Filter>Source Files\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Src\header\Exception.h">
       <Filter>Source Files\Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -23,7 +23,7 @@ int Customer::transfer(std::shared_ptr<Database> d, std::string acc1, std::strin
 
 int Customer::deposit(std::shared_ptr<Database> d, std::string acc, double v)
 {
-	if (AccountIDs.find(acc))
+	if (AccountIDs.find(acc) >= 0)
 	{
 		return 1;
 	}
@@ -54,7 +54,7 @@ int Employee::transfer(std::shared_ptr<Database> d, std::string acc1, std::strin
 
 int Employee::deposit(std::shared_ptr<Database> d, std::string acc, double v)
 {
-	if (d->Accounts.find(acc))
+	if (d->Accounts.find(acc) >= 0)
 	{
 		return 1;
 	}
