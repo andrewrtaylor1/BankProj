@@ -21,7 +21,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="README.md" />
     <None Include="docs\Phase1.docx">
       <Filter>Document Files</Filter>
     </None>
@@ -32,6 +31,15 @@
       <Filter>Document Files</Filter>
     </None>
     <None Include="Docs\Phase4.docx">
+      <Filter>Document Files</Filter>
+    </None>
+    <None Include="Docs\Final.docx">
+      <Filter>Document Files</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>Document Files</Filter>
+    </None>
+    <None Include="Docs\FinalPPT.pptx">
       <Filter>Document Files</Filter>
     </None>
   </ItemGroup>

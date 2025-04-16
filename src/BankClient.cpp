@@ -5,6 +5,25 @@
 
 using namespace Client;
 
+//next 2 functions are for terminal-related security. These should be unneeded when switching to a better UI in the future
+
+/// <summary>
+/// Clears output in modern terminals
+/// </summary>
+void clearScreenANSI() {
+	std::cout << "\033[2J\033[1;1H"; //uses ANSI Escape codes to clear the console, when supported
+}
+/// <summary>
+/// Clear terminal on specific systems. This is not ideal (system shell calls aren't great), but it'll work in our test CMD
+/// </summary>
+void clearScreen() {
+#ifdef _WIN32
+	system("cls");
+#else
+	system("clear");
+#endif
+}
+
 //pointer to new server
 std::shared_ptr<Serv::Server> server = std::shared_ptr<Serv::Server>(new Serv::Server);
 
@@ -110,12 +129,14 @@ void MnuCustomerLogin::logic()
 		std::string password = TextInput(" Password: "); //get the password
 		if (server->userValidation(user, password) == 0)
 		{
+			clearScreen();
+			clearScreenANSI();
 			MnuCustomerStart cs(user, password);
 			login = false;
 		}
 		else
 		{
-			std::cout << "Username or password incorrect. Please try again.";
+			std::cout << "Username or password incorrect. Please try again. ";
 		}
 	}
 }
@@ -134,12 +155,14 @@ void MnuEmployeeLogin::logic()
 		std::string password = TextInput(" Password: "); //get the password
 		if (server->userValidation(user, password) == 1)
 		{
+			clearScreen();
+			clearScreenANSI();
 			MnuEmployeeStart es(user, password);
 			login = false;
 		}
 		else
 		{
-			std::cout << "Username or password incorrect. Please try again.";
+			std::cout << "Username or password incorrect. Please try again. ";
 		}
 	}
 }
@@ -156,7 +179,7 @@ void MnuCustomerStart::logic()
 		int i = -1; //default is negative 1; declared here so it isn't redeclared every loop
 		while (running) //go until asked to stop
 		{
-			std::cout << "Your options are 0) Account Summaries 1) Transfer Between Accounts 2) Get Account History 3) Go Back\n";
+			std::cout << "Your options are 0) Account Summaries 1) Transfer Between Accounts 2) Get Account History 3) Password Change 4) Go Back\n";
 			i = DynamicOptions(TextInput()); //ask for input, convert to int with option function
 			if (i == 0)
 			{
@@ -173,6 +196,10 @@ void MnuCustomerStart::logic()
 				MnuGetAccountHistory ah(user, pass, id); //show account history
 			}
 			else if (i == 3)
+			{
+				MnuChangePassword ch(user, pass); //change password
+			}
+			else if (i == 4)
 			{
 				running = false; //end the loop
 			}
@@ -196,7 +223,7 @@ void MnuEmployeeStart::logic()
 		int i = -1; //default is negative 1; declared here so it isn't redeclared every loop
 		while (running) //go until asked to stop
 		{
-			std::cout << "Your options are: 0) Transfer Between Accounts 1) Desposit To Account\n2) Customer Creation 3) Account Creation 4) Employee Creation\n 5) Get Accounts 6) Get Account History 7) Go Back\n";
+			std::cout << "Your options are: 0) Transfer Between Accounts 1) Desposit To Account\n2) Customer Creation 3) Account Creation 4) Employee Creation 5) Get Accounts\n 6) Get Account History 7) Manual Bank Operations 8) Change Passwords 9) Go Back\n";
 			i = DynamicOptions(TextInput()); //ask for input, convert to int with option function
 			if (i == 0)
 			{
@@ -209,6 +236,8 @@ void MnuEmployeeStart::logic()
 			else if (i == 2)
 			{
 				MnuCustomerCreation cc(user, pass); //start customer creation
+				clearScreen();
+				clearScreenANSI();
 			}
 			else if (i == 3)
 			{
@@ -217,20 +246,32 @@ void MnuEmployeeStart::logic()
 			else if (i == 4)
 			{
 				MnuEmployeeCreation ec(user, pass); //start making anew employee entry
+				clearScreen();
+				clearScreenANSI();
 			}
 			else if (i == 5)
 			{
-				MnuGetAccounts ga(user, pass);
+				MnuGetAccounts ga(user, pass); //get accounts summaries
 			}
 			else if (i == 6)
 			{
 				std::string id = TextInput("Account ID: "); //grab account ID
 				MnuGetAccountHistory ah(user, pass, id); //show account history
 			}
+
 			else if (i == 7)
+			{
+				MnuManualBankOperations bo(user,pass); //manual operations
+			}
+			else if (i == 8)
+			{
+				MnuChangePassword ch(user, pass); //change password
+			}
+			else if (i == 9)
 			{
 				running = false; //end the loop
 			}
+			
 			else
 			{
 				std::cout << "I'm sorry, that's not one of the options, try again.\n"; //redisplay options
@@ -279,7 +320,17 @@ void MnuCustomerCreation::logic()
 			std::string userC = TextInput(" Username: "); //get the username
 			std::string passwordC = TextInput(" Password: "); //get the password
 			std::string accC = TextInput(" Account ID: "); //get the account ID
-			double d = stod(TextInput(" Deposit Amount (0.00): ")); //get the deposit amount, convert to double
+			//get the deposit amount, convert to double
+			double d = 1;
+			try
+			{
+				d = stod(TextInput(" Deposit Amount (0.00): "));
+			}
+			catch (...)
+			{
+				std::cout << "Not a number or an error occured.";
+				return;
+			}
 			if (server->userCreation(userC, passwordC, accC, d)) //make user
 			{
 				create = false;
@@ -293,6 +344,91 @@ void MnuCustomerCreation::logic()
 }
 
 /// <summary>
+/// allows changing passwords
+/// </summary>
+void MnuChangePassword::logic()
+{
+	if (server->userValidation(user, pass) == 1) //employee
+	{
+		std::cout << "You are changing the password as an Employee\nPlease supply the";
+		int type = DynamicOptions(TextInput(" Account Type (O, Customer; 1, Current Employee): "));
+		if (type == 0)
+		{
+			std::cout << "You are changing a customer's password. Please supply";
+			std::string userC = TextInput(" Username: "); //get the username
+			std::string passwordC = TextInput(" New Password: "); //get the password
+			if (server->userPassword(userC, passwordC, 1))
+			{
+				clearScreen();
+				clearScreenANSI();
+				std::cout << "You have successfully changed a password.\n";
+			}
+			else
+			{
+				clearScreen();
+				clearScreenANSI();
+				std::cout << "The change was not successful.\n";
+			}
+		}
+		else if (type == 1)
+		{
+			std::cout << "You are changing your own password. Please supply";
+			std::string passwordOld = TextInput(" Old Password: "); //get the password
+			std::string passwordNew = TextInput(" New Password: "); //get the new password
+			if (passwordOld == pass)
+			{
+				if (server->userPassword(user, passwordNew, 2))
+				{
+					clearScreen();
+					clearScreenANSI();
+					std::cout << "You have successfully changed your password.\n";
+				}
+				else
+				{
+					clearScreen();
+					clearScreenANSI();
+					std::cout << "The change was not successful\n";
+				}
+			}
+			else
+			{
+				std::cout << "Credentials problem, exiting.";
+			}
+		}
+		else
+		{
+			std::cout << "Did not pick a valid option, exiting.";
+		}
+		
+	}
+	else if (server->userValidation(user, pass) == 0) //user
+	{
+		std::cout << "You are changing the password as a Customer\nPlease supply the";
+		std::string passwordOld = TextInput(" Old Password: "); //get the password
+		std::string passwordNew = TextInput(" New Password: "); //get the new password
+		if (passwordOld == pass)
+		{
+			if (server->userPassword(user, passwordNew, 0))
+			{
+				clearScreen();
+				clearScreenANSI();
+				std::cout << "You have successfully changed your password.\n";
+			}
+			else
+			{
+				clearScreen();
+				clearScreenANSI();
+				std::cout << "The change was not successful\n";
+			}
+		}
+		else
+		{
+			std::cout << "Credentials problem, exiting.\n";
+		}
+	}
+}
+
+/// <summary>
 /// making a new account
 /// </summary>
 void MnuAccountCreation::logic()
@@ -300,13 +436,24 @@ void MnuAccountCreation::logic()
 	if (server->userValidation(user, pass) == 1)
 	{
 		bool create = true; //we are running the login functionality
+		if (server->accountsCount(user) < 1) create = false; //fail if we don't have any accounts
 		while (create) //run until we get success
 		{
 			std::cout << "Please supply the";
 			std::string userC = TextInput(" Username: "); //get the username
 			std::string accC = TextInput(" Account ID: "); //get the account ID
 			int i = DynamicOptions(TextInput(" Account Type\n(0 - Savings, 1 - Checking, 2 - Certificate of Deposit, 3 - Money Market): "));
-			double d = stod(TextInput(" Deposit Amount (0.00): ")); //get the deposit amount, convert to double
+			//get the deposit amount, convert to double
+			double d = 1;
+			try
+			{
+				d = stod(TextInput(" Deposit Amount (0.00): "));
+			}
+			catch (...)
+			{
+				std::cout << "Not a number or an error occured.";
+				return;
+			}
 			if (server->accountCreation(userC, accC, i, d)) //make account
 			{
 				create = false;
@@ -335,10 +482,26 @@ void MnuTransferBetweenAccounts::logic()
 			if (i == 1)
 			{
 				userC = TextInput(" Username: "); //get the username
+				if (userC == "")
+				{
+					userC = user;
+					std::cout << "No username supplied, assuming transfer between users.\n";
+				}
 			}
 			std::string accC = TextInput(" Account ID: "); //get the account ID
 			std::string acc2C = TextInput(" 2nd Account ID: "); //get the account ID again
-			double d = stod(TextInput(" Deposit Amount (0.00): ")); //get the deposit amount, convert to double
+			//get the transfer amount, convert to double
+			double d = 1;
+			try
+			{
+				d = stod(TextInput(" Transfer Amount (0.00): "));
+			}
+			catch (...)
+			{
+				std::cout << "Not a number or an error occured.";
+				return;
+			}
+			if (d < 0) d = -d; //make sure it's positive
 			if (server->accountsTransfer(userC, accC, acc2C, d)) //make transfers
 			{
 				create = false;
@@ -364,7 +527,18 @@ void MnuDeposit::logic()
 			std::cout << "Please supply the";
 			std::string userC = TextInput(" Username: "); //get the username
 			std::string accC = TextInput(" Account ID: "); //get the account ID
-			double d = stod(TextInput(" Deposit Amount (0.00): ")); //get the deposit amount, convert to double
+			//get the deposit amount, convert to double
+			double d = 1;
+			try
+			{
+				d = stod(TextInput(" Deposit Amount (0.00): "));
+			}
+			catch (...)
+			{
+				std::cout << "Not a number or an error occured.";
+				return;
+			}
+			if (d < 0) d = -d; //make sure it's positive
 			if (server->accountDeposit(userC, accC, d)) //make deposit
 			{
 				create = false;
@@ -385,8 +559,8 @@ void MnuGetAccounts::logic()
 	int access = server->userValidation(user, pass); //validate & get privlege
 	if (access >= 0)
 	{
-		server->accountsDisplay(user); //display the accounts
-		std::cout << "Amount of accounts: " << server->accountsCount(user); //also get count of accounts
+		std::cout << server->accountsDisplay(user); //display the accounts
+		std::cout << "Amount of accounts: " << server->accountsCount(user) << "\n"; //also get count of accounts
 	}
 }
 
@@ -399,5 +573,55 @@ void MnuGetAccountHistory::logic()
 	{
 		std::cout << server->accountDisplay(user, account);
 		std::cout << server->accountTransactions(user, account);
+	}
+}
+
+/// <summary>
+/// While task scheduling & online processing is not implemented, handle purchases & ongoing bank functions here
+/// </summary>
+void MnuManualBankOperations::logic()
+{
+	if (server->userValidation(user, pass) == 1) //make sure you're an employee
+	{
+		std::cout << "Manual bank functions are available.\n";
+		bool running = true;
+		int i = -1; //default is negative 1; declared here so it isn't redeclared every loop
+		while (running)
+		{
+			std::cout << "Your options are: 0) Purchases 1) Recurring Tasks (Interest) 2) Exit\n";
+			i = DynamicOptions(TextInput()); //ask for input, convert to int with option function
+			if (i == 0)
+			{
+				std::string us = TextInput(" Username: "); //username
+				std::string acc = TextInput(" Account ID: "); //account id
+				//get the purchase amount, convert to double
+				double d = 1;
+				try
+				{
+					d = stod(TextInput(" Purchase Amount (0.00): "));
+				}
+				catch (...)
+				{
+					std::cout << "Not a number or an error occured.";
+					return;
+				}
+				if (d < 0) d = -d; //make sure it's positive
+				std::string originAndName = "Manual Purchase";
+				server->purchase(us,acc,d,originAndName,originAndName); //purchase
+			}
+			else if (i == 1)
+			{
+				std::cout << "Running banking tasks.";
+				server->runBankProccesses(); //run said banking tasks
+			}
+			else if (i == 2)
+			{
+				running = false; //end the loop
+			}
+			else
+			{
+				std::cout << "I'm sorry, that's not one of the options, try again.\n"; //redisplay options
+			}
+		}
 	}
 }

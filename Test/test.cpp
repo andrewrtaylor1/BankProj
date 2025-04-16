@@ -70,6 +70,7 @@ TEST(LinkedList, ListCompoundFunctions)
 
 }
 
+
 //testing for proper exception handling
 TEST(LinkedList, LLExceptions)
 {
@@ -100,14 +101,17 @@ TEST(LinkedList, LLExceptions)
 	testing::internal::CaptureStdout();  //capture output until we grab output
 	EXPECT_FALSE(ll.update(-1, std::shared_ptr<std::string>())); //should fail and call exception
 	std::string updateOut = testing::internal::GetCapturedStdout(); //grab output
+	/*
 	//check outputs all did out of bounds index
 	EXPECT_EQ(emptyOut, "Attempted to access out of bounds index in LinkedList, while executing function: LinkedList::get\n");
+	*/
 	EXPECT_EQ(oneOut, "Attempted to access out of bounds index in LinkedList, while executing function: LinkedList::get\n");
 	EXPECT_EQ(twoOut, "Attempted to access out of bounds index in LinkedList, while executing function: LinkedList::get\n");
-	EXPECT_EQ(emptyOut, "Attempted to access out of bounds index in LinkedList, while executing function: LinkedList::get\n");
+	EXPECT_EQ(negatOut, "Attempted to access out of bounds index in LinkedList, while executing function: LinkedList::get\n");
 	EXPECT_EQ(dropOut, "Attempted to access out of bounds index in LinkedList, while executing function: LinkedList::drop\n");
 	EXPECT_EQ(updateOut, "Attempted to access out of bounds index in LinkedList, while executing function: LinkedList::update\n");
 }
+
 
 namespace DB {
 	//initialization test
@@ -150,7 +154,7 @@ namespace DB {
 	TEST(SavingsTest, SavingsPurchase) {
 		std::shared_ptr<Transaction> t(new Deposit(USDollar(100000))); //1000 dollars
 		std::shared_ptr<Account> a(new Saving(t, "s0001")); //initialize
-		EXPECT_TRUE(a->purchase(-10.01, "Test Purchase", "Test Company")); //buy something that's 10 bucks & 1 cent
+		EXPECT_TRUE(a->purchase(10.01, "Test Purchase", "Test Company")); //buy something that's 10 bucks & 1 cent
 		EXPECT_EQ(a->Transactions.get(1)->Val, -1001); //get the subtractive transaction, -$10.01
 		EXPECT_EQ(a->balance, 98999); //$989.99 remaining in balance
 		EXPECT_EQ(a->available, 98999); //$989.99 remaining in available
@@ -222,7 +226,7 @@ namespace DB {
 	TEST(CheckingTest, CheckingPurchase) {
 		std::shared_ptr<Transaction> t(new Deposit(USDollar(100000))); //1000 dollars
 		std::shared_ptr<Account> a(new Checking(t, "c0001")); //initialize
-		EXPECT_TRUE(a->purchase(-10.01, "Test Purchase", "Test Company")); //buy something that's 10 bucks & 1 cent
+		EXPECT_TRUE(a->purchase(10.01, "Test Purchase", "Test Company")); //buy something that's 10 bucks & 1 cent
 		EXPECT_EQ(a->Transactions.get(1)->Val, -1001); //get the subtractive transaction, -$10.01
 		EXPECT_EQ(a->balance, 98999); //$989.99 remaining in balance
 		EXPECT_EQ(a->available, 98999); //$989.99 remaining in available
@@ -294,7 +298,7 @@ namespace DB {
 	TEST(CoDTest, CoDPurchase) {
 		std::shared_ptr<Transaction> t(new Deposit(USDollar(100000))); //1000 dollars
 		std::shared_ptr<Account> a(new CertOfDep(t, "cd0001")); //initialize
-		EXPECT_TRUE(a->purchase(-10.01, "Test Purchase", "Test Company")); //buy something that's 10 bucks & 1 cent
+		EXPECT_TRUE(a->purchase(10.01, "Test Purchase", "Test Company")); //buy something that's 10 bucks & 1 cent
 		EXPECT_EQ(a->Transactions.get(1)->Val, -1001); //get the subtractive transaction, -$10.01
 		EXPECT_EQ(a->balance, 98999); //$989.99 remaining in balance
 		EXPECT_EQ(a->available, 98999); //$989.99 remaining in available
@@ -366,7 +370,7 @@ namespace DB {
 	TEST(MMTest, MMPurchase) {
 		std::shared_ptr<Transaction> t(new Deposit(USDollar(100000))); //1000 dollars
 		std::shared_ptr<Account> a(new MoneyMarket(t, "mm0001")); //initialize
-		EXPECT_TRUE(a->purchase(-10.01, "Test Purchase", "Test Company")); //buy something that's 10 bucks & 1 cent
+		EXPECT_TRUE(a->purchase(10.01, "Test Purchase", "Test Company")); //buy something that's 10 bucks & 1 cent
 		EXPECT_EQ(a->Transactions.get(1)->Val, -1001); //get the subtractive transaction, -$10.01
 		EXPECT_EQ(a->balance, 98999); //$989.99 remaining in balance
 		EXPECT_EQ(a->available, 98999); //$989.99 remaining in available

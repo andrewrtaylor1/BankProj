@@ -54,9 +54,58 @@ bool Server::userCreation(std::string user, std::string pass, std::string acc, d
 	if (db->Customers.find(user) == -1 && db->Accounts.find(acc) == -1) //make sure user & acc don't already exist
 	{
 		std::shared_ptr<DB::Customer> u = std::shared_ptr<DB::Customer>(new DB::Customer(user, pass));
-		std::shared_ptr<DB::Account> a = std::shared_ptr<DB::Account>(new DB::Saving(std::shared_ptr<DB::Transaction>(new DB::Deposit(deposit)), acc));
+		std::shared_ptr<DB::Transaction> t(new DB::Deposit(deposit));
+		std::shared_ptr<DB::Account> a = std::shared_ptr<DB::Account>(new DB::Saving(t, acc));
+		t.reset(); //clear extra transaction early
 		std::shared_ptr<std::string> s = std::shared_ptr<std::string>(new std::string(acc));
 		b = (u->AccountIDs.put(s) && db->Accounts.put(a) && db->Customers.put(u));
+	}
+	return b;
+}
+
+/// <summary>
+/// Allows users to change passwords
+/// </summary>
+/// <param name="user">User to change</param>
+/// <param name="pass">pass to change</param>
+/// <returns>were we successful? bool</returns>
+bool Server::userPassword(std::string user, std::string pass, int type)
+{
+	bool b = false;
+	int i = -1;
+	int j = -1;
+	switch (type)
+	{
+	case 2:
+		j = db->Employees.find(user);
+		if (j != -1)
+		{
+			std::shared_ptr<DB::Employee> e = db->Employees.get(j); //grab employee
+			if (e)
+			{
+				if (e->password != pass) //make sure to soft error if they set the same pass again
+				{
+					b = true;
+					e->password = pass;
+				}
+			}
+		}
+		break;
+	default:
+		i = db->Customers.find(user);
+		if (i != -1)
+		{
+			std::shared_ptr<DB::Customer> c = db->Customers.get(i); //grab customer
+			if (c)
+			{
+				if (c->password != pass) //make sure to soft error if they set the same pass again
+				{
+					b = true;
+					c->password = pass;
+				}
+			}
+		}
+		break;
 	}
 	return b;
 }
@@ -103,15 +152,19 @@ bool Server::accountCreation(std::string user, std::string acc, int t, double de
 				{
 					case 0:
 						a = std::shared_ptr<DB::Account>(new DB::Saving(tr, acc));
+						a->setInterestType(4); //normal interest
 						break;
 					case 1:
 						a = std::shared_ptr<DB::Account>(new DB::Checking(tr, acc));
+						a->setInterestType(0); //no interest
 						break;
 					case 2:
 						a = std::shared_ptr<DB::Account>(new DB::CertOfDep(tr, acc));
+						a->setInterestType(8); //extra good interest
 						break;
 					case 3:
 						a = std::shared_ptr<DB::Account>(new DB::MoneyMarket(tr, acc));
+						a->setInterestType(6); //daily, okay interest
 						break;
 					default:
 						break;
@@ -145,6 +198,14 @@ bool Server::accountsTransfer(std::string user, std::string acc, std::string acc
 		if (c)
 		{
 			b = c->transfer(db, acc, acc2, amnt);
+		}
+	}
+	else
+	{
+		std::shared_ptr<DB::Employee> e = db->Employees.get(user);
+		if (e)
+		{
+			b = e->transfer(db, acc, acc2, amnt);
 		}
 	}
 	return b;
@@ -211,7 +272,11 @@ std::string Server::accountDisplay(std::string user, std::string acc)
 		{
 			int z = db->Accounts.find(acc);
 			std::shared_ptr<DB::Account> a = db->Accounts.get(z);
-			if (a) return a->preview();
+			if (a)
+			{
+				std::string s = a->preview();
+				return s; //return display
+			}
 		}
 	}
 	else
@@ -292,4 +357,31 @@ std::string Server::accountTransactions(std::string user, std::string acc)
 	}
 
 	return "";
+}
+
+/// <summary>
+/// Purchases
+/// </summary>
+/// <param name="user">user</param>
+/// <param name="acc">account</param>
+/// <param name="val">purchase value</param>
+/// <param name="name">Purchase information</param>
+/// <param name="origin">Purchase origin</param>
+/// <returns>were we successful, bool</returns>
+bool Server::purchase(std::string user, std::string acc, double val, std::string name, std::string origin)
+{
+	bool b = false;
+	int i = db->Customers.find(user); //make sure user exists
+	if (i != -1)
+	{
+		b = db->purchase(acc, user, val, db, name, origin); //pass purchase to DB (has its own function for overdraft)
+	}
+	return b;
+}
+/// <summary>
+/// runs the bank processes
+/// </summary>
+void Server::runBankProccesses()
+{
+	db->bankProcesses(); //uses the database bank processes function
 }

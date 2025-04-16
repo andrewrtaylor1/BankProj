@@ -116,6 +116,23 @@ namespace Client
 			std::string pass;
 	};
 
+	class MnuChangePassword : public Menu
+	{
+	public:
+		MnuChangePassword(std::string us, std::string pss)
+		{
+			user = us;
+			pass = pss;
+			logic();
+		}
+		~MnuChangePassword() {
+
+		}
+		void logic();
+		std::string user;
+		std::string pass;
+	};
+
 	class MnuAccountCreation : public Menu
 	{
 	public:
@@ -205,5 +222,24 @@ namespace Client
 			std::string user;
 			std::string pass;
 			std::string account;
+	};
+
+
+	class MnuManualBankOperations : public Menu
+	{
+	public:
+		MnuManualBankOperations(std::string us, std::string pss)
+		{
+			user = us;
+			pass = pss;
+			logic();
+		}
+		~MnuManualBankOperations() {
+
+		}
+		void logic();
+		//strings for logic
+		std::string user;
+		std::string pass;
 	};
 }

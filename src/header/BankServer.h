@@ -19,6 +19,8 @@ namespace Serv
 			int userValidation(std::string user, std::string pass);
 			//creates the user
 			bool userCreation(std::string user, std::string pass, std::string acc, double deposit = 10.00);
+			///allows users to change passwords; very important because there is a hardcoded default employee
+			bool userPassword(std::string user, std::string pass, int type);
 			//creates the employee
 			bool employeeCreation(std::string user, std::string pass);
 			//adds account to user
@@ -35,5 +37,8 @@ namespace Serv
 			std::string accountsDisplay(std::string user);
 			//gets transactions
 			std::string accountTransactions(std::string user, std::string acc);
+			//purchase
+			bool purchase(std::string user, std::string acc, double val, std::string name = "Purchase", std::string origin = "Unknown");
+			void runBankProccesses();
 	};
 }

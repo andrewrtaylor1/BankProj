@@ -567,6 +567,7 @@ class LinkedList
 			tail = head->getNext(); //grab tail pointer
 			tail->setPrevious(head);
 			put(d);
+			d.reset();
 		}
 
 		/// <summary>
@@ -582,9 +583,9 @@ class LinkedList
 			std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
 			std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
 			//switching logic; if the index is higher than half the count, we start from the back
-			if (i > (count / 2) && i != *j)
+			if (i > (count / 2) && i != 0)
 			{
-				*j = count;
+				*j = count-1;
 				b = tail->exists(iPointer, j);
 			}
 			else
@@ -592,6 +593,8 @@ class LinkedList
 				b = head->exists(iPointer, j);
 			}
 			//return no matter what; false if nothing happened
+			iPointer.reset(); //clears the pointers
+			j.reset();
 			return b;
 		}
 		
@@ -625,15 +628,17 @@ class LinkedList
 				std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
 				std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
 				//switching logic; if the index is higher than half the count, we start from the back
-				if (i > (count / 2) && i != *j)
+				if (i > (count / 2) && i != 0)
 				{
-					*j = count;
+					*j = count-1;
 					return tail->get(iPointer, j);
 				}
 				else
 				{
 					return head->get(iPointer, j);
 				}
+				iPointer.reset(); //clears the pointers
+				j.reset();
 			}
 			catch (Exception& ex)
 			{
@@ -675,7 +680,7 @@ class LinkedList
 				std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
 				std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
 				//switching logic; if the index is higher than half the count, we start from the back
-				if (i > (count / 2) && i != *j)
+				if (i > (count / 2) && i != 0)
 				{
 					*j = count;
 					b = tail->put(iPointer, j, d);
@@ -685,12 +690,15 @@ class LinkedList
 					b = head->put(iPointer, j, d);
 				}
 				if (b) count++;
+				iPointer.reset(); //clears the pointers
+				j.reset();
 			}
 			catch (Exception& ex)
 			{
 				//print error, access by reference means it'll get the right printError
 				ex.printError();
 			}
+			d.reset(); //drop the data pointer cause we don't need it anymore
 			//return no matter what; false if nothing happened
 			return b;
 		}
@@ -719,7 +727,7 @@ class LinkedList
 			try
 			{
 				//out of bounds detection
-				if (i < 0 || i > count)
+				if (i < 0 || i >= count)
 				{
 					throw ExLLOoB("LinkedList::drop");
 					return b;
@@ -728,9 +736,9 @@ class LinkedList
 				std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
 				std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
 				//switching logic; if the index is higher than half the count, we start from the back
-				if (i > (count / 2) && i != *j)
+				if (i > (count / 2) && i != 0)
 				{
-					*j = count;
+					*j = count-1;
 					b = tail->drop(iPointer, j);
 				}
 				else
@@ -739,6 +747,8 @@ class LinkedList
 				}
 				//update the count
 				updateCount();
+				iPointer.reset(); //clears the pointers
+				j.reset();
 			}
 			catch (Exception& ex)
 			{
@@ -773,7 +783,7 @@ class LinkedList
 			try
 			{
 				//out of bounds detection
-				if (i < 0 || i > count)
+				if (i < 0 || i >= count)
 				{
 					throw ExLLOoB("LinkedList::update");
 					return b;
@@ -782,22 +792,24 @@ class LinkedList
 				std::shared_ptr<int> iPointer = std::shared_ptr<int>(new int(i));
 				std::shared_ptr<int> j = std::shared_ptr<int>(new int(0));
 				//switching logic; if the index is higher than half the count, we start from the back
-				if (i > (count / 2) && i != *j)
+				if (i > (count / 2) && i != 0)
 				{
-					*j = count;
+					*j = count-1;
 					b = tail->update(iPointer, j, d);
 				}
 				else
 				{
 					b = head->update(iPointer, j, d);
 				}
+				iPointer.reset(); //clears the pointers
+				j.reset(); 
 			}
 			catch (Exception& ex)
 			{
 				//print error, access by reference means it'll get the right printError
 				ex.printError();
 			}
-			
+			d.reset(); //drop the data pointer cause we don't need it anymore
 			//return no matter what; false if nothing happened
 			return b;
 		}
